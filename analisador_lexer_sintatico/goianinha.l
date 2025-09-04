@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "goianinha.tab.h"
-#include "./tabela_simbolos/tabela_simbolos.h"
+#include "../tabela_simbolos/tabela_simbolos.h"
 
 int comment_level = 0;
 extern void yyerror(const char *s);

@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "tabela_simbolos/tabela_simbolos.h"
+#include "../tabela_simbolos/tabela_simbolos.h"
 
 extern int yylineno;
 extern char* yytext;
@@ -18,7 +18,7 @@ void yyerror(const char *s);
 %}
 
 %code requires {
-    #include "tabela_simbolos/tabela_simbolos.h"
+    #include "../tabela_simbolos/tabela_simbolos.h"
 }
 
 %union {

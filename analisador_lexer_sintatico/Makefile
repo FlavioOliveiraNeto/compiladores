@@ -11,8 +11,8 @@ TARGET = goianinha
 LEX_SRC = goianinha.l
 YACC_SRC = goianinha.y
 MAIN_SRC = main_compiler.c
-SYMTAB_C = ./tabela_simbolos/tabela_simbolos.c
-SYMTAB_H = ./tabela_simbolos/tabela_simbolos.h
+SYMTAB_C = ../tabela_simbolos/tabela_simbolos.c
+SYMTAB_H = ../tabela_simbolos/tabela_simbolos.h
 
 # Arquivos gerados pelo Flex e Bison moderno
 LEX_GEN_C = lex.yy.c
