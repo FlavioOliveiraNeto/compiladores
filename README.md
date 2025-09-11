@@ -18,7 +18,7 @@ O projeto está organizado em dois diretórios principais:
   - `goianinha.y`: A definição do analisador sintático e da gramática (Bison).
   - `main_compiler.c`: O programa principal que orquestra a compilação.
   - `Makefile`: Para automatizar o processo de compilação do `goianinha`.
-  - `teste.gn`: Um arquivo de exemplo com código-fonte na linguagem Goianinha.
+  - `arquivo_teste.g`: Um arquivo de exemplo com código-fonte na linguagem Goianinha.
 
 ## Como Compilar o Projeto
 
@@ -50,12 +50,12 @@ Para compilar o `goianinha`, siga os passos abaixo:
 
 ## Como Executar e Testar
 
-Após a compilação, você pode testar o compilador com o arquivo de exemplo `teste.gn`.
+Após a compilação, você pode testar o compilador com o arquivo de exemplo `arquivo_teste.g`.
 
-1.  Ainda no diretório `analisador_lexer_sintatico`, execute o compilador passando o arquivo `teste.gn` como argumento:
+1.  Ainda no diretório `analisador_lexer_sintatico`, execute o compilador passando o arquivo `arquivo_teste.g` como argumento:
 
     ```bash
-    ./goianinha teste.gn
+    ./goianinha arquivo_teste.g
     ```
 
 2.  O compilador irá processar o arquivo e exibir mensagens indicando o progresso da análise sintática e semântica.
