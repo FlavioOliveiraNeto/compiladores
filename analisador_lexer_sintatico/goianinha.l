@@ -30,48 +30,65 @@ extern void yyerror(const char *s);
 "execute"       { return KW_EXECUTE; }
 "void"          { return KW_VOID; }
 
+"+" { return SUM; }
+"-" { return SUB; }
+"*" { return MUL; }
+"/" { return DIV; }
+"=" { return ASSIGN; }
+"==" { return EQ; }
+"!=" { return NE; }
+"<" { return LT; }
+">" { return GT; }
+"<=" { return LE; }
+">=" { return GE; }
+"&&" { return AND; }
+"||" { return OR; }
+"!" { return NOT; }
+
+"(" { return LPAREN; }
+")" { return RPAREN; }
+"{" { return LBRACE; }
+"}" { return RBRACE; }
+"[" { return LBRACKET; }
+"]" { return RBRACKET; }
+";" { return SEMICOLON; }
+"," { return COMMA; }
+
 [0-9]+          { yylval.ival = atoi(yytext); return INT_LITERAL; }
 \'[^\'\n]\'     { yylval.cval = yytext[1]; return CHAR_LITERAL; }
-\"(\\.|[^"\n])*\" { 
-    yylval.sval = strdup(yytext + 1); 
-    yylval.sval[strlen(yylval.sval)-1] = '\0'; 
+\"(\\.|[^"\n])*\" {
+    yylval.sval = strdup(yytext + 1);
+    yylval.sval[strlen(yylval.sval)-1] = '\0';
     return STRING_LITERAL;
 }
 
 [a-zA-Z_][a-zA-Z0-9_]* { yylval.sval = strdup(yytext); return ID; }
 
-"+" { return SUM; } 
-"-" { return SUB; } 
-"*" { return MUL; } 
-"/" { return DIV; }
-"=" { return ASSIGN; } 
-"==" { return EQ; } 
-"!=" { return NE; }
-"<" { return LT; } 
-">" { return GT; } 
-"<=" { return LE; } 
-">=" { return GE; }
-"&&" { return AND; } 
-"||" { return OR; } 
-"!" { return NOT; }
-
-"(" { return LPAREN; } 
-")" { return RPAREN; } 
-"{" { return LBRACE; } 
-"}" { return RBRACE; }
-"[" { return LBRACKET; } 
-"]" { return RBRACKET; } 
-";" { return SEMICOLON; } 
-"," { return COMMA; }
-
-"/*"       { BEGIN(COMMENT); comment_level++; }
+"/*"            { BEGIN(COMMENT); comment_level++; }
+"//"            { while (input() != '\n' && input() != EOF); }
 <COMMENT>{
-    "*/"   { BEGIN(INITIAL); if(comment_level>0) comment_level--; }
-    .|\n   { /* ignora tudo dentro do comentário */ }
+    "*/"        {
+                    comment_level--;
+                    if (comment_level == 0) {
+                        BEGIN(INITIAL);
+                    }
+                }
+    "/*"        { comment_level++; }
+    \n          { /* conta linhas em comentarios */ }
+    .           { /* ignora */ }
+    <<EOF>>     {
+        if (comment_level > 0) {
+            fprintf(stderr, "ERRO: COMENTÁRIO NAO TERMINA NA LINHA %d\n", yylineno);
+        }
+        yyterminate();
+    }
 }
+\"[^\"]*\n      { fprintf(stderr, "ERRO: CADEIA DE CARACTERES OCUPA MAIS DE UMA LINHA NA LINHA %d\n", yylineno); }
 
-[ \t]+    { /* ignora */ }
-\n        { /* Flex já incrementa yylineno */ }
-.         { if(comment_level == 0) fprintf(stderr, "ERRO: CARACTERE INVALIDO '%s' NA LINHA %d\n", yytext, yylineno); }
+[ \t\r]+        { /* ignora */ }
+\n              { /* Flex já incrementa yylineno */ }
+.               {
+    fprintf(stderr, "ERRO: CARACTERE INVÁLIDO '%s' NA LINHA %d\n", yytext, yylineno);
+}
 
 %%

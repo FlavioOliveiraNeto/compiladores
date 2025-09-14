@@ -36,6 +36,9 @@ void yyerror(const char *s);
 %token SUM SUB MUL DIV ASSIGN EQ NE LT GT LE GE AND OR NOT
 %token LPAREN RPAREN LBRACE RBRACE LBRACKET RBRACKET SEMICOLON COMMA
 
+%nonassoc LOWER_THAN_ELSE
+%nonassoc KW_SENAO
+
 %left OR
 %left AND
 %left EQ NE
@@ -69,57 +72,41 @@ Programa:
 ;
 
 ListaDeclaracoes:
-    Declaracao ListaDeclaracoes
-    | /* empty */
+    /* empty */
+    | ListaDeclaracoes Declaracao
 ;
 
 Declaracao:
-    DeclaracaoVariavel SEMICOLON
-    | DeclaracaoFuncao
+    Tipo { tipo_atual_declaracao = $1; } RestoDeclaracao
 ;
 
-DeclaracaoVariavel:
-    Tipo ID {
-        tipo_atual_declaracao = $1; 
-        inserir_variavel_na_tabela_atual($2, tipo_atual_declaracao, contador_posicao_escopo++);
-    }
-    ListaIDs
-;
-
-ListaIDs:
-    COMMA ID { inserir_variavel_na_tabela_atual($2, tipo_atual_declaracao, contador_posicao_escopo++); }
-    ListaIDs
-    | /* empty */
-;
-
-Tipo:
-      KW_INT  { $$ = TIPO_INT; }
-    | KW_CAR  { $$ = TIPO_CAR; }
-    | KW_VOID { $$ = TIPO_VOID; }
-;
-
-DeclaracaoFuncao:
-    Tipo ID LPAREN
+RestoDeclaracao:
+    // Se o que vem depois do tipo é uma lista de IDs e ';', é uma declaração de variável
+    ListaDeVariaveis SEMICOLON
+    // Se o que vem depois do tipo é um ID e '(', é uma função
+    | ID LPAREN
         {
-            funcao_atual_declaracao = inserir_funcao_na_tabela_atual($2, $1, 0);
+            funcao_atual_declaracao = inserir_funcao_na_tabela_atual($1, tipo_atual_declaracao, 0);
             criar_novo_escopo_e_empilhar();
             contador_posicao_escopo = 0;
         }
-    ListaParametros
-    RPAREN LBRACE
+      ListaParametros RPAREN Bloco
         {
-            if (funcao_atual_declaracao) {
-                funcao_atual_declaracao->num_argumentos = contador_posicao_escopo;
-            }
-        }
-        ListaDeclaracoes
-        ListaComandos
-    RBRACE
-        {
+            printf("Funcao '%s' analisada com sucesso.\n", $1);
             remover_escopo_atual();
-            printf("Funcao '%s' analisada com sucesso.\n", $2);
             funcao_atual_declaracao = NULL;
         }
+;
+
+ListaDeVariaveis:
+    ID { inserir_variavel_na_tabela_atual($1, tipo_atual_declaracao, contador_posicao_escopo++); }
+    | ListaDeVariaveis COMMA ID { inserir_variavel_na_tabela_atual($3, tipo_atual_declaracao, contador_posicao_escopo++); }
+;
+
+Tipo:
+    KW_INT  { $$ = TIPO_INT; }
+    | KW_CAR  { $$ = TIPO_CAR; }
+    | KW_VOID { $$ = TIPO_VOID; }
 ;
 
 ListaParametros:
@@ -133,6 +120,7 @@ Parametro:
             inserir_parametro_na_tabela_atual($2, $1, contador_posicao_escopo++);
             if (funcao_atual_declaracao) {
                 adicionar_parametro_a_funcao(funcao_atual_declaracao, $2, $1);
+                funcao_atual_declaracao->num_argumentos = contador_posicao_escopo;
             }
         }
 ;
@@ -148,32 +136,37 @@ ListaComandos:
 ;
 
 Comando:
-    ComandoSimples SEMICOLON
-    | ComandoBloco
+    ComandoSimples
+    | Bloco
+    | ComandoSe
+    | ComandoEnquanto
 ;
 
 ComandoSimples:
-      Atribuicao
-    | ChamadaFuncao
-    | ComandoLeia
-    | ComandoEscreva
-    | ComandoRetorne
-    | ComandoNovalinha
+      Atribuicao SEMICOLON
+    | ChamadaFuncao SEMICOLON
+    | ComandoLeia SEMICOLON
+    | ComandoEscreva SEMICOLON
+    | ComandoRetorne SEMICOLON
+    | ComandoNovalinha SEMICOLON
 ;
 
-ComandoBloco:
+Bloco:
       LBRACE
         {
-            criar_novo_escopo_e_empilhar();
-            contador_posicao_escopo = 0;
+            if (funcao_atual_declaracao == NULL) {
+                criar_novo_escopo_e_empilhar();
+                contador_posicao_escopo = 0;
+            }
         }
+        ListaDeclaracoes
         ListaComandos
       RBRACE
         {
-            remover_escopo_atual();
+            if (funcao_atual_declaracao == NULL) {
+                 remover_escopo_atual();
+            }
         }
-    | ComandoSe
-    | ComandoEnquanto
 ;
 
 Atribuicao:
@@ -216,6 +209,7 @@ ComandoLeia:
 
 ComandoEscreva:
     KW_ESCREVA LPAREN Expressao RPAREN
+  | KW_ESCREVA LPAREN STRING_LITERAL RPAREN
 ;
 
 ComandoRetorne:
@@ -228,41 +222,12 @@ ComandoNovalinha:
 ;
 
 ComandoSe:
-    KW_SE LPAREN Expressao RPAREN KW_ENTAO
-        {
-            criar_novo_escopo_e_empilhar();
-            contador_posicao_escopo = 0;
-        }
-        Comando
-        {
-            remover_escopo_atual();
-        }
-        ComandoSenaoOpt
-;
-
-ComandoSenaoOpt:
-    KW_SENAO
-        {
-            criar_novo_escopo_e_empilhar();
-            contador_posicao_escopo = 0;
-        }
-        Comando
-        {
-            remover_escopo_atual();
-        }
-    | /* empty */
+    KW_SE LPAREN Expressao RPAREN KW_ENTAO Comando %prec LOWER_THAN_ELSE
+    | KW_SE LPAREN Expressao RPAREN KW_ENTAO Comando KW_SENAO Comando
 ;
 
 ComandoEnquanto:
-    KW_ENQUANTO LPAREN Expressao RPAREN KW_EXECUTE
-        {
-            criar_novo_escopo_e_empilhar();
-            contador_posicao_escopo = 0;
-        }
-        Comando
-        {
-            remover_escopo_atual();
-        }
+    KW_ENQUANTO LPAREN Expressao RPAREN KW_EXECUTE Comando
 ;
 
 Expressao:
