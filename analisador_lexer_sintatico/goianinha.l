@@ -78,17 +78,16 @@ extern void yyerror(const char *s);
     .           { /* ignora */ }
     <<EOF>>     {
         if (comment_level > 0) {
-            fprintf(stderr, "ERRO: COMENTÁRIO NAO TERMINA NA LINHA %d\n", yylineno);
+            fprintf(stderr, "ERRO: COMENTÁRIO NAO TERMINA na linha %d\n", yylineno);
         }
         yyterminate();
     }
 }
-\"[^\"]*\n      { fprintf(stderr, "ERRO: CADEIA DE CARACTERES OCUPA MAIS DE UMA LINHA NA LINHA %d\n", yylineno); }
+\"[^\"]*\n      { fprintf(stderr, "ERRO: CADEIA DE CARACTERES OCUPA MAIS DE UMA LINHA na linha %d\n", yylineno); }
 
 [ \t\r]+        { /* ignora */ }
 \n              { /* Flex já incrementa yylineno */ }
 .               {
-    fprintf(stderr, "ERRO: CARACTERE INVÁLIDO '%s' NA LINHA %d\n", yytext, yylineno);
+    fprintf(stderr, "ERRO: CARACTERE INVÁLIDO na linha %d\n", yylineno);
 }
-
 %%

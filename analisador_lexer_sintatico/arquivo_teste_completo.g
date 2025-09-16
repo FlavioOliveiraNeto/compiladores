@@ -33,61 +33,61 @@ programa teste_completo {
     /*
      * Início do bloco principal do programa.
      * Este é um comentário de múltiplas linhas.
-    */
+     */
     letra_inicial = 'G';
     contador = 10;
 
-    escreva("--- Iniciando Teste Completo do Compilador Goianinha ---");
+    escreva "--- Iniciando Teste Completo do Compilador Goianinha ---";
     novalinha;
     novalinha;
 
-    escreva("Letra inicial do programa: ");
-    escreva(letra_inicial);
+    escreva "Letra inicial do programa: ";
+    escreva letra_inicial;
     novalinha;
 
     // Teste de chamada de função e atribuição
     resultado_final = calcular_fib(contador);
 
-    escreva("O termo ");
-    escreva(contador);
-    escreva(" da sequencia de Fibonacci eh: ");
-    escreva(resultado_final);
+    escreva "O termo ";
+    escreva contador;
+    escreva " da sequencia de Fibonacci eh: ";
+    escreva resultado_final;
     novalinha;
     novalinha;
 
     // Teste da estrutura 'se-entao-senao' com expressão complexa
-    escreva("Testando escopo e a estrutura se-entao-senao...");
+    escreva "Testando escopo e a estrutura se-entao-senao...";
     novalinha;
 
     se ((resultado_final > 50) && (letra_inicial == 'G')) entao {
         // Teste de declaração de variável local com o mesmo nome de uma global
-        int contador; 
+        int contador;
         contador = 99; // Deve se referir à variável local, não à global
         
-        escreva("Condicao VERDADEIRA. O resultado eh > 50.");
+        escreva "Condicao VERDADEIRA. O resultado eh > 50.";
         novalinha;
-        escreva("Valor do 'contador' local (dentro do 'se'): ");
-        escreva(contador);
+        escreva "Valor do 'contador' local (dentro do 'se'): ";
+        escreva contador;
         novalinha;
     } senao {
-        escreva("Condicao FALSA. O resultado NAO eh > 50.");
+        escreva "Condicao FALSA. O resultado NAO eh > 50.";
         novalinha;
     }
 
-    escreva("Valor do 'contador' global (fora do 'se'): ");
-    escreva(contador); // Deve imprimir o valor global (10)
+    escreva "Valor do 'contador' global (fora do 'se'): ";
+    escreva contador; // Deve imprimir o valor global (10)
     novalinha;
     novalinha;
     
     // Opcional: Teste do comando 'leia'
     // O compilador irá parar e esperar por um valor inteiro
-    escreva("Digite um novo valor para o contador e pressione Enter:");
+    escreva "Digite um novo valor para o contador e pressione Enter:";
     novalinha;
-    leia contador; 
-    escreva("O novo valor do contador eh: ");
-    escreva(contador);
+    leia contador;
+    escreva "O novo valor do contador eh: ";
+    escreva contador;
     novalinha;
 
-    escreva("--- Fim do Teste ---");
+    escreva "--- Fim do Teste ---";
     novalinha;
 }

@@ -81,9 +81,7 @@ Declaracao:
 ;
 
 RestoDeclaracao:
-    // Se o que vem depois do tipo é uma lista de IDs e ';', é uma declaração de variável
     ListaDeVariaveis SEMICOLON
-    // Se o que vem depois do tipo é um ID e '(', é uma função
     | ID LPAREN
         {
             funcao_atual_declaracao = inserir_funcao_na_tabela_atual($1, tipo_atual_declaracao, 0);
@@ -199,17 +197,17 @@ ListaMaisArgumentos:
 ;
 
 ComandoLeia:
-    KW_LEIA LPAREN ID RPAREN
+    KW_LEIA ID
         {
-            if (!pesquisar_nome_na_pilha($3)) {
-                fprintf(stderr, "ERRO: Variavel '%s' nao declarada na linha %d\n", $3, yylineno);
+            if (!pesquisar_nome_na_pilha($2)) {
+                fprintf(stderr, "ERRO: Variavel '%s' nao declarada na linha %d\n", $2, yylineno);
             }
         }
 ;
 
 ComandoEscreva:
-    KW_ESCREVA LPAREN Expressao RPAREN
-  | KW_ESCREVA LPAREN STRING_LITERAL RPAREN
+    KW_ESCREVA Expressao
+  | KW_ESCREVA STRING_LITERAL
 ;
 
 ComandoRetorne:
