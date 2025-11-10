@@ -1,4 +1,4 @@
-# Compilador para a Linguagem Goianinha
+# Compilador para a Linguagem Goianinha - Criado por: Flávio de Oliveira Neto
 
 Este projeto é um compilador para uma linguagem de programação simples e didática chamada "Goianinha". O compilador foi desenvolvido em C, utilizando as ferramentas Flex para a análise léxica e Bison para a análise sintática.
 
