@@ -18,31 +18,22 @@ O projeto está organizado em dois diretórios principais:
   - `goianinha.y`: A definição do analisador sintático e da gramática (Bison).
   - `main_compiler.c`: O programa principal que orquestra a compilação.
   - `Makefile`: Para automatizar o processo de compilação do `goianinha`.
-  - `arquivo_teste.g`: Um arquivo de exemplo com código-fonte na linguagem Goianinha.
+  - `modulo_arvore_sintatica_abstrata.h` e `modulo_arvore_sintatica_abstrata.c`: Definição e implementação da Árvore Sintática Abstrata (AST).
+  - `modulo_analisador_semantico.h` e `modulo_analisador_semantico.c`: Implementação do analisador semântico.
+  - `modulo_gerador_codigo.h` e `modulo_gerador_codigo.c`: Implementação do gerador de código MIPS.
+  - Arquivos de teste: `expressao1Correto.txt`, `fatorialCorreto.txt`, e outros que demonstram o funcionamento e a detecção de erros.
 
 ## Como Compilar o Projeto
 
 Para compilar o `goianinha`, siga os passos abaixo:
 
-1.  Navegue até o diretório da tabela de símbolos:
-
-    ```bash
-    cd tabela_simbolos
-    ```
-
-2.  Execute o comando `make` para compilar o projeto e gerar os arquivos: 'main_tabela_simbolos.o', ''tabela_simbolos.o' e 'test_tabela_simbolos'.
-
-    ```bash
-    make
-    ```
-
-3.  Navegue até o diretório do analisador:
+1.  Navegue até o diretório do analisador:
 
     ```bash
     cd analisador_lexer_sintatico
     ```
 
-4.  Execute o comando `make` para compilar o projeto. Este comando irá invocar o Flex e o Bison para gerar os analisadores, compilar todos os arquivos `.c` necessários e linká-los, gerando o executável `goianinha`.
+2.  Execute o comando `make` para compilar o projeto. Este comando irá invocar o Flex e o Bison para gerar os analisadores, compilar todos os arquivos `.c` necessários e linká-los, gerando o executável `goianinha`.
 
     ```bash
     make
@@ -50,15 +41,21 @@ Para compilar o `goianinha`, siga os passos abaixo:
 
 ## Como Executar e Testar
 
-Após a compilação, você pode testar o compilador com o arquivo de exemplo `arquivo_teste.g`.
+Após a compilação, você pode testar o compilador com os arquivos de exemplo.
 
-1.  Ainda no diretório `analisador_lexer_sintatico`, execute o compilador passando o arquivo `arquivo_teste.g` como argumento:
+1.  Ainda no diretório `analisador_lexer_sintatico`, execute o compilador passando um dos arquivos de teste como argumento:
 
     ```bash
-    ./goianinha arquivo_teste.g
+    ./goianinha <nome_do_arquivo_de_teste>.txt
     ```
 
-2.  O compilador irá processar o arquivo e exibir mensagens indicando o progresso da análise sintática e semântica.
+    Por exemplo:
+
+    ```bash
+    ./goianinha fatorialCorreto.txt
+    ```
+
+2.  O compilador irá processar o arquivo, exibir mensagens indicando o progresso da análise e, se não houver erros, gerar um arquivo `saida.s` com o código MIPS correspondente.
 
 ## Testando a Tabela de Símbolos Separadamente
 

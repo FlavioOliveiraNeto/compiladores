@@ -1,5 +1,3 @@
-// Arquivo que define as estruturas de dados e protótipos das funções para a pilha de tabelas de símbolos (escopos) do compilador Goianinha.
-
 #ifndef TABELA_SIMBOLOS_H
 #define TABELA_SIMBOLOS_H
 
@@ -38,8 +36,6 @@ typedef struct TabelaSimbolos {
 
 extern TabelaSimbolos *pilha_tabelas;
 
-// Aqui são os protótipos das funções da tabela de símbolos, com comentários para explicar o que cada uma faz.
-
 /**
  * @brief Inicializa a pilha de tabelas de símbolos, tornando-a vazia.
  */
@@ -51,8 +47,7 @@ void iniciar_pilha_tabela_simbolos();
 void criar_novo_escopo_e_empilhar();
 
 /**
- * @brief Pesquisa um lexema (nome) na pilha de tabelas de símbolos,
- * começando pelo escopo atual (topo) e descendo.
+ * @brief Pesquisa um lexema (nome) na pilha de tabelas de símbolos, começando pelo escopo atual (topo) e descendo.
  * @param nome O lexema a ser pesquisado.
  * @return Um ponteiro para a EntradaTabela encontrada ou NULL se não encontrar.
  */

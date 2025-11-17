@@ -1,12 +1,11 @@
-// Arquivo que será responsável por abrir o arquivo de entrada e iniciar a análise sintática.
-
 #include <stdio.h>
 #include <stdlib.h>
+#include "../tabela_simbolos/tabela_simbolos.h"
 
-extern FILE *yyin;      // Ponteiro para o arquivo de entrada do Lexer
-extern int yyparse();   // Função principal do Parser
-extern int yylex();     // Função principal do Lexer (chamada por yyparse)
-extern int yylineno;    // Variável global do Lexer para o número da linha
+extern FILE *yyin;      
+extern int yyparse();   
+extern int yylex();    
+extern int yylineno;   
 
 #include "modulo_arvore_sintatica_abstrata.h"        
 #include "modulo_analisador_semantico.h" 
@@ -27,6 +26,8 @@ int main(int argc, char **argv) {
     }
 
     printf("Iniciando compilacao do arquivo: %s\n", argv[1]);
+
+    iniciar_pilha_tabela_simbolos();
 
     int parse_result = yyparse();
 
@@ -62,6 +63,8 @@ int main(int argc, char **argv) {
             raiz_ast = NULL;
         }
     }
+
+    eliminar_pilha_tabela_simbolos();
 
     return (parse_result != 0);
 }

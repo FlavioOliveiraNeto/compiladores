@@ -9,11 +9,6 @@ extern int yylineno;
 extern char* yytext;
 extern FILE *yyin;
 extern int yylex();
-extern TabelaSimbolos *pilha_tabelas;
-
-TipoDado tipo_atual_declaracao;
-int contador_posicao_escopo = 0;
-EntradaTabela *funcao_atual_declaracao = NULL;
 
 NoAST *raiz_ast = NULL;
 
@@ -57,31 +52,29 @@ void yyerror(const char *s);
 %type <no_ast> ListaDeclaracoes Declaracao RestoDeclaracao ListaDeVariaveis
 %type <no_ast> ListaParametros Parametro ListaMaisParametros
 %type <no_ast> ListaComandos Comando ComandoSimples Bloco
-%type <no_ast> Atribuicao ChamadaFuncao ListaArgumentos ListaMaisArgumentos
+%type <no_ast> ChamadaFuncao ListaArgumentos ListaMaisArgumentos
 %type <no_ast> ComandoLeia ComandoEscreva ComandoRetorne ComandoNovalinha
 %type <no_ast> ComandoSe ComandoEnquanto
-%type <no_ast> Expressao Termo Fator FatorComparacao FatorAritmetico
+%type <no_ast> AssignExpr Expressao Termo Fator FatorComparacao FatorAritmetico
 %type <no_ast> TermoAritmetico Atom
 
 %%
 
 Programa:
-    KW_PROGRAMA ID LBRACE
+    ListaDeclaracoes
+    KW_PROGRAMA LBRACE
         {
-            printf("Iniciando analise de programa '%s'\n", $2);
-            iniciar_pilha_tabela_simbolos();
-            criar_novo_escopo_e_empilhar();
-            contador_posicao_escopo = 0;
+            printf("Iniciando analise de programa (main)\n");
         }
-        ListaDeclaracoes
-        ListaComandos
+    ListaDeclaracoes
+    ListaComandos    
     RBRACE
         {
-            printf("Programa '%s' analisado com sucesso.\n", $2);
-            remover_escopo_atual();
-            eliminar_pilha_tabela_simbolos();
-            raiz_ast = criar_no(NO_PROGRAMA, $5, $6, NULL);
-            free($2); 
+            printf("Programa analisado com sucesso.\n");
+            
+            NoAST* todas_declaracoes = adicionar_a_lista($1, $5);
+            
+            raiz_ast = criar_no(NO_PROGRAMA, todas_declaracoes, $6, NULL);
         }
 ;
 
@@ -91,7 +84,15 @@ ListaDeclaracoes:
 ;
 
 Declaracao:
-    Tipo { tipo_atual_declaracao = $1; } RestoDeclaracao { $$ = $3; }
+    Tipo {  } RestoDeclaracao 
+    {
+        NoAST *temp = $3;
+        while(temp != NULL) {
+            temp->tipo_dado_computado = $1; 
+            temp = temp->proximo;
+        }
+        $$ = $3;
+    }
 ;
 
 RestoDeclaracao:
@@ -99,37 +100,30 @@ RestoDeclaracao:
     |
     ID LPAREN
         {
-            funcao_atual_declaracao = inserir_funcao_na_tabela_atual($1, tipo_atual_declaracao, 0);
-            criar_novo_escopo_e_empilhar();
-            contador_posicao_escopo = 0;
+            
         }
       ListaParametros RPAREN Bloco
         {
             printf("Funcao '%s' analisada com sucesso.\n", $1);
-            remover_escopo_atual();
+          
             NoAST *no_id = criar_no_id($1);
             $$ = criar_no(NO_DECL_FUNCAO, no_id, $4, $6);
-            $$->tipo_dado_computado = tipo_atual_declaracao;
-            funcao_atual_declaracao = NULL;
+
             free($1);
         }
 ;
 
 ListaDeVariaveis:
     ID  {
-            inserir_variavel_na_tabela_atual($1, tipo_atual_declaracao, contador_posicao_escopo++);
             NoAST *no_id = criar_no_id($1);
             $$ = criar_no(NO_DECL_VARIAVEL, no_id, NULL, NULL);
-            $$->tipo_dado_computado = tipo_atual_declaracao;
             free($1);
         }
     |
     ListaDeVariaveis COMMA ID 
         {
-            inserir_variavel_na_tabela_atual($3, tipo_atual_declaracao, contador_posicao_escopo++);
             NoAST *no_id = criar_no_id($3);
             NoAST *nova_decl = criar_no(NO_DECL_VARIAVEL, no_id, NULL, NULL);
-            nova_decl->tipo_dado_computado = tipo_atual_declaracao;
             $$ = adicionar_a_lista($1, nova_decl);
             free($3);
         }
@@ -149,11 +143,6 @@ ListaParametros:
 Parametro:
     Tipo ID
         {
-            inserir_parametro_na_tabela_atual($2, $1, contador_posicao_escopo++);
-            if (funcao_atual_declaracao) {
-                adicionar_parametro_a_funcao(funcao_atual_declaracao, $2, $1);
-                funcao_atual_declaracao->num_argumentos = contador_posicao_escopo;
-            }
             NoAST *no_id = criar_no_id($2);
             $$ = criar_no(NO_PARAMETRO, no_id, NULL, NULL);
             $$->tipo_dado_computado = $1; 
@@ -179,8 +168,7 @@ Comando:
 ;
 
 ComandoSimples:
-      Atribuicao SEMICOLON     { $$ = $1; }
-    | ChamadaFuncao SEMICOLON  { $$ = $1; }
+      AssignExpr SEMICOLON      { $$ = $1; }
     | ComandoLeia SEMICOLON      { $$ = $1; }
     | ComandoEscreva SEMICOLON   { $$ = $1; }
     | ComandoRetorne SEMICOLON   { $$ = $1; }
@@ -190,41 +178,21 @@ ComandoSimples:
 Bloco:
       LBRACE
         {
-            if (funcao_atual_declaracao == NULL) {
-                criar_novo_escopo_e_empilhar();
-                contador_posicao_escopo = 0;
-            }
+
         }
         ListaDeclaracoes
         ListaComandos
       RBRACE
         {
-            if (funcao_atual_declaracao == NULL) {
-                 remover_escopo_atual();
-            }
-            $$ = criar_no(NO_BLOCO, $3, $4, NULL);
-        }
-;
 
-Atribuicao:
-    ID ASSIGN Expressao
-        {
-            if (!pesquisar_nome_na_pilha($1)) {
-                fprintf(stderr, "ERRO: Variavel '%s' nao declarada na linha %d\n", $1, yylineno);
-            }
-            NoAST *no_id = criar_no_id($1);
-            $$ = criar_no(NO_COMANDO_ATRIBUICAO, no_id, $3, NULL);
-            free($1);
+            $$ = criar_no(NO_BLOCO, $3, $4, NULL);
         }
 ;
 
 ChamadaFuncao:
     ID LPAREN ListaArgumentos RPAREN
         {
-            EntradaTabela *func_entry = pesquisar_nome_na_pilha($1);
-            if (!func_entry || func_entry->tipo != TIPO_FUNCAO) {
-                fprintf(stderr, "ERRO: Funcao '%s' nao declarada ou tipo incorreto na linha %d\n", $1, yylineno);
-            }
+
             NoAST *no_id = criar_no_id($1);
             $$ = criar_no(NO_CHAMADA_FUNCAO, no_id, $3, NULL);
             free($1);
@@ -232,21 +200,19 @@ ChamadaFuncao:
 ;
 
 ListaArgumentos:
-    Expressao ListaMaisArgumentos { $$ = adicionar_a_lista($1, $2); }
+    AssignExpr ListaMaisParametros { $$ = adicionar_a_lista($1, $2); }
     | /* empty */                 { $$ = NULL; }
 ;
 
 ListaMaisArgumentos:
-    COMMA Expressao ListaMaisArgumentos { $$ = adicionar_a_lista($2, $3); }
+    COMMA AssignExpr ListaMaisArgumentos { $$ = adicionar_a_lista($2, $3); }
     | /* empty */                       { $$ = NULL; }
 ;
 
 ComandoLeia:
     KW_LEIA ID
         {
-            if (!pesquisar_nome_na_pilha($2)) {
-                fprintf(stderr, "ERRO: Variavel '%s' nao declarada na linha %d\n", $2, yylineno);
-            }
+
             NoAST *no_id = criar_no_id($2);
             $$ = criar_no(NO_COMANDO_LEIA, no_id, NULL, NULL);
             free($2);
@@ -254,7 +220,7 @@ ComandoLeia:
 ;
 
 ComandoEscreva:
-    KW_ESCREVA Expressao        { $$ = criar_no(NO_COMANDO_ESCREVA, $2, NULL, NULL); }
+    KW_ESCREVA AssignExpr        { $$ = criar_no(NO_COMANDO_ESCREVA, $2, NULL, NULL); }
   | KW_ESCREVA STRING_LITERAL { 
         NoAST *no_str = criar_no_string($2);
         $$ = criar_no(NO_COMANDO_ESCREVA, no_str, NULL, NULL);
@@ -263,7 +229,7 @@ ComandoEscreva:
 ;
 
 ComandoRetorne:
-    KW_RETORNE Expressao    { $$ = criar_no(NO_COMANDO_RETORNE, $2, NULL, NULL); }
+    KW_RETORNE AssignExpr    { $$ = criar_no(NO_COMANDO_RETORNE, $2, NULL, NULL); }
     | KW_RETORNE            { $$ = criar_no(NO_COMANDO_RETORNE, NULL, NULL, NULL); }
 ;
 
@@ -272,16 +238,27 @@ ComandoNovalinha:
 ;
 
 ComandoSe:
-    KW_SE LPAREN Expressao RPAREN KW_ENTAO Comando %prec LOWER_THAN_ELSE
+    KW_SE LPAREN AssignExpr RPAREN KW_ENTAO Comando %prec LOWER_THAN_ELSE
         { $$ = criar_no(NO_COMANDO_SE, $3, $6, NULL); }
     |
-    KW_SE LPAREN Expressao RPAREN KW_ENTAO Comando KW_SENAO Comando
+    KW_SE LPAREN AssignExpr RPAREN KW_ENTAO Comando KW_SENAO Comando
         { $$ = criar_no(NO_COMANDO_SE, $3, $6, $8); }
 ;
 
 ComandoEnquanto:
-    KW_ENQUANTO LPAREN Expressao RPAREN KW_EXECUTE Comando
+    KW_ENQUANTO LPAREN AssignExpr RPAREN KW_EXECUTE Comando
         { $$ = criar_no(NO_COMANDO_ENQUANTO, $3, $6, NULL); }
+;
+
+AssignExpr:
+    ID ASSIGN AssignExpr
+        {
+
+            NoAST *no_id = criar_no_id($1);
+            $$ = criar_no(NO_COMANDO_ATRIBUICAO, no_id, $3, NULL);
+            free($1);
+        }
+    | Expressao { $$ = $1; }
 ;
 
 Expressao:
@@ -324,9 +301,7 @@ TermoAritmetico:
 Atom:
       ID
         {
-            if (!pesquisar_nome_na_pilha($1)) {
-                fprintf(stderr, "ERRO: Variavel '%s' nao declarada na linha %d\n", $1, yylineno);
-            }
+            
             $$ = criar_no_id($1);
             free($1);
         }
@@ -343,7 +318,7 @@ Atom:
             $$ = criar_no_string($1);
             free($1);
         }
-    | LPAREN Expressao RPAREN
+    | LPAREN AssignExpr RPAREN
         {
             $$ = $2;
         }

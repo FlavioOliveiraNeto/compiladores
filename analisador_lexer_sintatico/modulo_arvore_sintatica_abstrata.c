@@ -2,7 +2,6 @@
 
 /**
  * @brief Aloca e inicializa um nó genérico da AST.
- * Esta é a função base para a criação de nós.
  */
 static NoAST* alocar_no() {
     NoAST *no = (NoAST*) malloc(sizeof(NoAST));
@@ -11,9 +10,8 @@ static NoAST* alocar_no() {
         exit(EXIT_FAILURE);
     }
     
-    // Inicializa todos os campos para um estado padrão
-    no->tipo_no = NO_PROGRAMA; // Tipo padrão (será sobrescrito)
-    no->linha = yylineno; // Pega a linha atual do lexer
+    no->tipo_no = NO_PROGRAMA; 
+    no->linha = yylineno; 
     no->filho1 = NULL;
     no->filho2 = NULL;
     no->filho3 = NULL;
@@ -21,7 +19,7 @@ static NoAST* alocar_no() {
     no->lexema = NULL;
     no->ival = 0;
     no->cval = '\0';
-    no->tipo_dado_computado = TIPO_VOID; // Tipo semântico padrão
+    no->tipo_dado_computado = TIPO_VOID; 
     no->entrada_tabela = NULL;
     
     return no;
@@ -45,7 +43,7 @@ NoAST *criar_no(TipoNoAST tipo, NoAST *filho1, NoAST *filho2, NoAST *filho3) {
 NoAST *criar_no_id(char *lexema) {
     NoAST *no = alocar_no();
     no->tipo_no = NO_ID;
-    no->lexema = strdup(lexema); // Copia o lexema para a árvore
+    no->lexema = strdup(lexema); 
     if (no->lexema == NULL) {
         fprintf(stderr, "Erro critico: Falha ao duplicar lexema para NO_ID.\n");
         exit(EXIT_FAILURE);
@@ -79,7 +77,7 @@ NoAST *criar_no_car(char valor) {
 NoAST *criar_no_string(char *str) {
     NoAST *no = alocar_no();
     no->tipo_no = NO_LITERAL_STRING;
-    no->lexema = strdup(str); // Copia a string para a árvore
+    no->lexema = strdup(str);
     if (no->lexema == NULL) {
         fprintf(stderr, "Erro critico: Falha ao duplicar lexema para NO_LITERAL_STRING.\n");
         exit(EXIT_FAILURE);
@@ -92,18 +90,16 @@ NoAST *criar_no_string(char *str) {
  */
 NoAST *adicionar_a_lista(NoAST *lista, NoAST *no_para_adicionar) {
     if (lista == NULL) {
-        return no_para_adicionar; // O nó se torna a cabeça da lista
+        return no_para_adicionar;
     }
 
-    // Percorre a lista até encontrar o último nó
     NoAST *temp = lista;
     while (temp->proximo != NULL) {
         temp = temp->proximo;
     }
     
-    // Adiciona o novo nó no final
     temp->proximo = no_para_adicionar;
-    return lista; // Retorna a cabeça original da lista
+    return lista; 
 }
 
 /**
@@ -114,19 +110,14 @@ void liberar_ast(NoAST *raiz) {
         return;
     }
 
-    // Libera recursivamente os filhos
     liberar_ast(raiz->filho1);
     liberar_ast(raiz->filho2);
     liberar_ast(raiz->filho3);
-    
-    // Libera o próximo nó na lista (se houver)
     liberar_ast(raiz->proximo);
 
-    // Libera dados alocados dinamicamente (lexemas)
     if (raiz->lexema != NULL) {
         free(raiz->lexema);
     }
 
-    // Libera o próprio nó
     free(raiz);
 }

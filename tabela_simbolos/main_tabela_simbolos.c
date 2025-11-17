@@ -1,4 +1,3 @@
-// Programa de teste para a implementação da pilha de tabelas de símbolos.
 #include "tabela_simbolos.h"
 #include <stdio.h>
 

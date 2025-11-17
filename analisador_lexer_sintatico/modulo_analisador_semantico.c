@@ -2,8 +2,8 @@
 #include <stdio.h>
 
 /* * Variáveis de estado 'static' (privadas) para o analisador semântico.
- * Elas controlam o estado atual da análise.
- */
+ * Controlam o estado atual da análise.
+*/
 
 static int contador_erros_semanticos = 0;
 
@@ -25,8 +25,7 @@ static void reportar_erro(const char* mensagem, int linha) {
 
 /**
  * @brief Função auxiliar para percorrer uma lista encadeada da AST.
- * Uma lista é uma sequência de nós ligados pelo ponteiro 'proximo'.
- * (Ex: ListaDeclaracoes, ListaComandos, ListaParametros)
+ * Uma lista é uma sequência de nós ligados pelo ponteiro 'proximo'. (Ex: ListaDeclaracoes, ListaComandos, ListaParametros)
  * @param no A cabeça da lista.
  */
 static void percorrer_lista(NoAST *no) {
@@ -48,22 +47,15 @@ static void percorrer_ast(NoAST *no) {
     }
 
     switch (no->tipo_no) {
-
-        /* * Nós de gerenciamento de escopo
-         * (PROGRAMA, BLOCO, DECL_FUNCAO)
-         * Primeiro criamos o escopo, depois visitamos os filhos.
-         */
         case NO_PROGRAMA:
-            // (filho1 = ListaDeclaracoes, filho2 = Bloco "principal")
-            criar_novo_escopo_e_empilhar(); // Cria o escopo global
-            percorrer_lista(no->filho1); // Processa declarações globais
-            percorrer_ast(no->filho2); // Processa o bloco principal
-            remover_escopo_atual(); // Remove o escopo global
+            criar_novo_escopo_e_empilhar();
+
+            percorrer_lista(no->filho1);
+            percorrer_lista(no->filho2); 
+            remover_escopo_atual();
             break;
 
         case NO_DECL_FUNCAO:
-            // (filho1 = ID, filho2 = ListaParametros, filho3 = Bloco)
-            
             EntradaTabela *nova_func = inserir_funcao_na_tabela_atual(
                 no->filho1->lexema,
                 no->tipo_dado_computado,
@@ -116,6 +108,7 @@ static void percorrer_ast(NoAST *no) {
             break;
 
         case NO_DECL_VARIAVEL:
+        {
             if (funcao_atual != NULL && pilha_tabelas->proximo != NULL) {
                 EntradaTabela *check = pesquisar_nome_na_pilha(no->filho1->lexema);
                 if (check != NULL && check->posicao >= 0) {
@@ -128,7 +121,12 @@ static void percorrer_ast(NoAST *no) {
                 no->tipo_dado_computado,
                 -1 
             );
+            EntradaTabela* entrada = pesquisar_nome_na_pilha(no->filho1->lexema);
+            if (entrada != NULL) {
+                no->filho1->entrada_tabela = entrada;
+            }
             break;
+        }
 
         case NO_COMANDO_ATRIBUICAO:
             percorrer_ast(no->filho1); 
@@ -141,6 +139,7 @@ static void percorrer_ast(NoAST *no) {
             } else if (tipo_lhs != tipo_rhs) {
                 reportar_erro("Tipos incompativeis na atribuicao.", no->linha);
             }
+            no->tipo_dado_computado = tipo_lhs;
             break;
 
         case NO_COMANDO_SE:
@@ -337,18 +336,13 @@ static void percorrer_ast(NoAST *no) {
 
 /**
  * @brief Função principal (pública) do analisador semântico.
- * (Esta é a função declarada em semantica.h)
  */
 int analisar_semantica(NoAST *raiz) {
 
     contador_erros_semanticos = 0;
     funcao_atual = NULL;
     
-    iniciar_pilha_tabela_simbolos();
-    
     percorrer_ast(raiz);
-    
-    eliminar_pilha_tabela_simbolos();
     
     return contador_erros_semanticos;
 }

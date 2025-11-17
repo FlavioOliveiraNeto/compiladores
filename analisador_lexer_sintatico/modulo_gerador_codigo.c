@@ -155,8 +155,8 @@ static void gerar_programa(NoAST *no) {
     emitir_comentario("--- Programa Principal (main) ---");
     emitir_label("main");
     offset_pilha_local = 0;
-    NoAST* decls_main = no->filho2->filho1;
-    NoAST* cmds_main = no->filho2->filho2;
+    NoAST* decls_main = no->filho1;
+    NoAST* cmds_main = no->filho2;
     
     int espaco_locais_main = 0;
     NoAST* temp_decl = decls_main;
@@ -173,13 +173,13 @@ static void gerar_programa(NoAST *no) {
     }
     emitir("move $fp, $sp"); 
 
-    percorrer_geracao(cmds_main); // Gera os comandos do main
+    gerar_lista_comandos(cmds_main); 
 
     emitir_comentario("--- Fim do Programa (exit) ---");
     if (espaco_locais_main > 0) {
-        emitir_com_valor("addiu $sp, $sp,", espaco_locais_main); // Libera espaço
+        emitir_com_valor("addiu $sp, $sp,", espaco_locais_main); 
     }
-    emitir("li $v0, 10"); // syscall 10 (exit)
+    emitir("li $v0, 10");
     emitir("syscall");
 }
 
@@ -188,7 +188,7 @@ static void gerar_programa(NoAST *no) {
  * As declarações já foram tratadas pelo 'pai' (função ou programa).
  */
 static void gerar_bloco(NoAST *no) {
-    percorrer_geracao(no->filho2);
+    gerar_lista_comandos(no->filho2);
 }
 
 /**
@@ -222,7 +222,7 @@ static void gerar_declaracao_funcao(NoAST *no) {
     emitir_label(label_funcao);
 
     funcao_sendo_gerada = no;
-    offset_pilha_local = 0; // Zera para esta função
+    offset_pilha_local = 0; 
 
     emitir_comentario("Prologo");
     emitir("addiu $sp, $sp, -8");
@@ -235,7 +235,7 @@ static void gerar_declaracao_funcao(NoAST *no) {
     NoAST *temp_decl = lista_decls_locais;
     while (temp_decl != NULL) {
         if (temp_decl->tipo_no == NO_DECL_VARIAVEL) {
-            espaco_locais += 4; // 4 bytes por var
+            espaco_locais += 4; 
             temp_decl->filho1->entrada_tabela->posicao = -espaco_locais;
         }
         temp_decl = temp_decl->proximo;
@@ -244,10 +244,10 @@ static void gerar_declaracao_funcao(NoAST *no) {
     if (espaco_locais > 0) {
         emitir_com_valor("addiu $sp, $sp,", -espaco_locais);
     }
-    offset_pilha_local = espaco_locais; // Guarda o total alocado
+    offset_pilha_local = espaco_locais; 
 
     emitir_comentario("Corpo da Funcao");
-    percorrer_geracao(no->filho3); // Gera o bloco da função
+    percorrer_geracao(no->filho3); 
 
     emitir_comentario("Epilogo");
     char label_retorno[100];
@@ -286,14 +286,14 @@ static void gerar_endereco_variavel(NoAST *no_id) {
     }
     
     
-    if (entrada->posicao >= 0) { // É um parâmetro
+    if (entrada->posicao >= 0) { 
         
         int num_args = funcao_sendo_gerada->filho1->entrada_tabela->num_argumentos;
         int offset = 8 + 4 * (num_args - 1 - entrada->posicao);
-        emitir_com_valor("addiu $t0, $fp,", offset); // $t0 = &param
+        emitir_com_valor("addiu $t0, $fp,", offset); 
         
-    } else { // É uma variável local
-        emitir_com_valor("addiu $t0, $fp,", entrada->posicao); // $t0 = &local_var
+    } else { 
+        emitir_com_valor("addiu $t0, $fp,", entrada->posicao); 
     }
 }
 
@@ -312,7 +312,7 @@ static void gerar_comando_atribuicao(NoAST *no) {
     emitir("lw $t0, 0($sp)");
     emitir("addiu $sp, $sp, 4");
     
-    emitir("sw $v0, 0($t0)"); // *($t0) = $v0
+    emitir("sw $v0, 0($t0)"); 
 }
 
 /**
@@ -327,26 +327,25 @@ static void gerar_comando_se(NoAST *no) {
     
     emitir_comentario("Comando SE");
     
-    gerar_expressao(no->filho1); // Resultado em $v0
+    gerar_expressao(no->filho1);
     
-    if (no->filho3 != NULL) { // Tem 'senao'
-        emitir_com_label("beqz $v0,", label_else); // Se falso, pula para o 'senao'
-    } else { // Não tem 'senao'
-        emitir_com_label("beqz $v0,", label_fim); // Se falso, pula para o fim
+    if (no->filho3 != NULL) { 
+        emitir_com_label("beqz $v0,", label_else); 
+    } else { 
+        emitir_com_label("beqz $v0,", label_fim); 
     }
     
-    // 3. Bloco 'entao' (filho2)
+
     emitir_comentario("SE - Bloco THEN");
     percorrer_geracao(no->filho2);
     
-    if (no->filho3 != NULL) { // Se tem 'senao'
-        emitir_com_label("j", label_fim); // Pula o 'senao'
+    if (no->filho3 != NULL) { 
+        emitir_com_label("j", label_fim); 
         emitir_label(label_else);
         emitir_comentario("SE - Bloco ELSE");
-        percorrer_geracao(no->filho3); // Gera o 'senao'
+        percorrer_geracao(no->filho3); 
     }
-    
-    // 4. Label de fim
+
     emitir_label(label_fim);
 }
 
@@ -361,22 +360,17 @@ static void gerar_comando_enquanto(NoAST *no) {
     sprintf(label_fim, "enquanto_fim_%d", label_id);
     
     emitir_comentario("Comando ENQUANTO");
-    emitir_label(label_inicio); // Label do início (para o loop)
+    emitir_label(label_inicio); 
     
-    // 1. Gera a condição (filho1)
-    gerar_expressao(no->filho1); // Resultado em $v0
+    gerar_expressao(no->filho1); 
     
-    // 2. Testa a condição
-    emitir_com_label("beqz $v0,", label_fim); // Se falso, sai do loop
+    emitir_com_label("beqz $v0,", label_fim); 
     
-    // 3. Gera o corpo (filho2)
     emitir_comentario("ENQUANTO - Corpo");
     percorrer_geracao(no->filho2);
     
-    // 4. Volta para o início
     emitir_com_label("j", label_inicio);
     
-    // 5. Label de fim
     emitir_label(label_fim);
 }
 
@@ -385,49 +379,37 @@ static void gerar_comando_enquanto(NoAST *no) {
  */
 static void gerar_comando_leia(NoAST *no) {
     emitir_comentario("Comando LEIA");
-    // 1. Chama syscall 5 (read_int)
     emitir("li $v0, 5");
-    emitir("syscall"); // O inteiro lido está em $v0
+    emitir("syscall"); 
     
-    // 2. Armazena o resultado no ID (filho1)
-    // (filho1 = ID)
-    gerar_endereco_variavel(no->filho1); // Endereço em $t0
-    emitir("sw $v0, 0($t0)"); // *($t0) = $v0
+    gerar_endereco_variavel(no->filho1); 
+    emitir("sw $v0, 0($t0)"); 
 }
 
 /**
  * @brief Gera código para o comando 'escreva'.
  */
 static void gerar_comando_escreva(NoAST *no) {
-    // (filho1 = Expressao ou STRING_LITERAL)
     
     if (no->filho1->tipo_no == NO_LITERAL_STRING) {
         emitir_comentario("Comando ESCREVA (String)");
-        // 1. Define a string no .data
         char label_str[20];
         sprintf(label_str, "str_%d", contador_label_string++);
         emitir(".data");
         emitir_label(label_str);
-        // O lexema da AST ainda tem as aspas, vamos removê-las
-        // (Simplificação: assumindo que não)
-        // Correção: o parser em goianinha.y remove as aspas
         fprintf(arquivo_saida, "\t.asciiz \"%s\"\n", no->filho1->lexema);
         emitir(".text");
         
-        // 2. Chama syscall 4 (print_string)
         emitir_com_label("la $a0,", label_str);
         emitir("li $v0, 4");
         emitir("syscall");
         
     } else {
         emitir_comentario("Comando ESCREVA (Expressao)");
-        // 1. Gera a expressão (filho1)
-        gerar_expressao(no->filho1); // Resultado em $v0
+        gerar_expressao(no->filho1);
         
-        // 2. Move o resultado para $a0
         emitir("move $a0, $v0");
         
-        // 3. Chama syscall 1 (print_int) ou 11 (print_char)
         if (no->filho1->tipo_dado_computado == TIPO_CAR) {
             emitir("li $v0, 11");
         } else {
@@ -442,12 +424,10 @@ static void gerar_comando_escreva(NoAST *no) {
  */
 static void gerar_comando_retorne(NoAST *no) {
     emitir_comentario("Comando RETORNE");
-    if (no->filho1 != NULL) { // 'retorne Expr'
-        // 1. Calcula a expressão (filho1)
-        gerar_expressao(no->filho1); // Resultado em $v0 (já é o reg de retorno)
+    if (no->filho1 != NULL) { 
+        gerar_expressao(no->filho1);
     }
     
-    // 2. Pula para o epílogo da função
     char label_retorno[100];
     sprintf(label_retorno, "ret_%s", funcao_sendo_gerada->filho1->lexema);
     emitir_com_label("j", label_retorno);
@@ -468,35 +448,26 @@ static void gerar_novalinha() {
  */
 static void gerar_chamada_funcao(NoAST *no) {
     emitir_comentario("Chamada de Funcao");
-    // (filho1 = ID, filho2 = ListaArgumentos)
-    
-    // 1. Avalia os argumentos (da direita para a esquerda) e empilha
     int num_args = 0;
     NoAST *arg = no->filho2;
-    // (Simplificação: vamos avaliar da esquerda para a direita)
     while (arg != NULL) {
-        gerar_expressao(arg); // Resultado em $v0
-        emitir("addiu $sp, $sp, -4"); // Empilha
+        gerar_expressao(arg); 
+        emitir("addiu $sp, $sp, -4"); 
         emitir("sw $v0, 0($sp)");
         num_args++;
         arg = arg->proximo;
     }
     
-    // 2. Chama a função
     char label_funcao[100];
     sprintf(label_funcao, "func_%s", no->filho1->lexema);
     emitir_com_label("jal", label_funcao);
     
-    // 3. Limpa a pilha (remove os argumentos)
     if (num_args > 0) {
         emitir_com_valor("addiu $sp, $sp,", num_args * 4);
     }
     
-    // O valor de retorno da função já está em $v0 (convenção MIPS)
 }
 
-
-/* --- Funções de Geração de Expressão --- */
 
 /**
  * @brief Função "dispatcher" para gerar código para qualquer expressão.
@@ -516,31 +487,32 @@ static void gerar_expressao(NoAST *no) {
             gerar_id(no);
             break;
         case NO_CHAMADA_FUNCAO:
-            gerar_chamada_funcao(no); // Resultado já fica em $v0
+            gerar_chamada_funcao(no);
+            break;
+        case NO_COMANDO_ATRIBUICAO:
+            gerar_comando_atribuicao(no);
             break;
             
         // Operações Binárias
         case NO_OP_SOMA:    gerar_op_binaria(no, "add"); break;
         case NO_OP_SUB:     gerar_op_binaria(no, "sub"); break;
-        case NO_OP_MULT:    gerar_op_binaria(no, "mult"); break; // Tratamento especial
-        case NO_OP_DIV:     gerar_op_binaria(no, "div"); break;  // Tratamento especial
+        case NO_OP_MULT:    gerar_op_binaria(no, "mult"); break;
+        case NO_OP_DIV:     gerar_op_binaria(no, "div"); break; 
         
-        // Operações Lógicas/Relacionais (resultam 0 ou 1)
-        case NO_OP_IGUAL:   gerar_op_logica(no, "seq"); break; // Set if Equal
-        case NO_OP_DIFERENTE: gerar_op_logica(no, "sne"); break; // Set if Not Equal
-        case NO_OP_MENOR:   gerar_op_logica(no, "slt"); break; // Set if Less Than
-        case NO_OP_MAIOR:   gerar_op_logica(no, "sgt"); break; // Set if Greater Than
-        case NO_OP_MENOR_IGUAL: gerar_op_logica(no, "sle"); break; // Set if Less/Equal
-        case NO_OP_MAIOR_IGUAL: gerar_op_logica(no, "sge"); break; // Set if Greater/Equal
+        case NO_OP_IGUAL:   gerar_op_logica(no, "seq"); break; 
+        case NO_OP_DIFERENTE: gerar_op_logica(no, "sne"); break; 
+        case NO_OP_MENOR:   gerar_op_logica(no, "slt"); break; 
+        case NO_OP_MAIOR:   gerar_op_logica(no, "sgt"); break;
+        case NO_OP_MENOR_IGUAL: gerar_op_logica(no, "sle"); break; 
+        case NO_OP_MAIOR_IGUAL: gerar_op_logica(no, "sge"); break; 
         
-        case NO_OP_E:       gerar_op_binaria(no, "and"); break; // Lógica bit-a-bit (simplificação)
-        case NO_OP_OU:      gerar_op_binaria(no, "or"); break;  // Lógica bit-a-bit (simplificação)
+        case NO_OP_E:       gerar_op_binaria(no, "and"); break; 
+        case NO_OP_OU:      gerar_op_binaria(no, "or"); break;  
         
-        case NO_OP_NEGACAO: // '!' (not)
+        case NO_OP_NEGACAO: 
             emitir_comentario("Expressao NOT");
-            gerar_expressao(no->filho1); // Resultado em $v0
-            // Converte (se $v0 == 0, $v0 = 1; senão $v0 = 0)
-            emitir("seq $v0, $v0, $zero"); // $v0 = ($v0 == 0)
+            gerar_expressao(no->filho1); 
+            emitir("seq $v0, $v0, $zero");
             break;
 
         default:
@@ -553,8 +525,8 @@ static void gerar_expressao(NoAST *no) {
  * @brief Gera código para carregar o valor de um ID em $v0.
  */
 static void gerar_id(NoAST *no) {
-    gerar_endereco_variavel(no); // Endereço em $t0
-    emitir("lw $v0, 0($t0)"); // $v0 = *($t0)
+    gerar_endereco_variavel(no); 
+    emitir("lw $v0, 0($t0)"); 
 }
 
 /**
@@ -564,29 +536,23 @@ static void gerar_id(NoAST *no) {
  */
 static void gerar_op_binaria(NoAST *no, const char *mnemonico_mips) {
     emitir_comentario("Expressao Binaria");
-    // 1. Gera LHS (filho1)
-    gerar_expressao(no->filho1); // Resultado em $v0
+    gerar_expressao(no->filho1); 
     
-    // 2. Empilha o resultado
     emitir("addiu $sp, $sp, -4");
     emitir("sw $v0, 0($sp)");
     
-    // 3. Gera RHS (filho2)
-    gerar_expressao(no->filho2); // Resultado em $v0
+    gerar_expressao(no->filho2); 
     
-    // 4. Desempilha o LHS para $t1
     emitir("lw $t1, 0($sp)");
     emitir("addiu $sp, $sp, 4");
     
-    // 5. Opera
     if (strcmp(mnemonico_mips, "mult") == 0) {
-        emitir("mult $t1, $v0"); // $t1 * $v0
-        emitir("mflo $v0"); // Resultado em $v0
+        emitir("mult $t1, $v0");
+        emitir("mflo $v0");
     } else if (strcmp(mnemonico_mips, "div") == 0) {
-        emitir("div $t1, $v0"); // $t1 / $v0
-        emitir("mflo $v0"); // Quociente em $v0 (ignora resto)
+        emitir("div $t1, $v0"); 
+        emitir("mflo $v0");
     } else {
-        // Formato: op $v0, $t1, $v0  (i.e., $v0 = $t1 op $v0)
         char instrucao[50];
         sprintf(instrucao, "%s $v0, $t1, $v0", mnemonico_mips);
         emitir(instrucao);
@@ -599,22 +565,16 @@ static void gerar_op_binaria(NoAST *no, const char *mnemonico_mips) {
  */
 static void gerar_op_logica(NoAST *no, const char *mnemonico_mips) {
     emitir_comentario("Expressao Logica/Relacional");
-    // 1. Gera LHS (filho1)
-    gerar_expressao(no->filho1); // Resultado em $v0
+    gerar_expressao(no->filho1); 
     
-    // 2. Empilha
     emitir("addiu $sp, $sp, -4");
     emitir("sw $v0, 0($sp)");
     
-    // 3. Gera RHS (filho2)
-    gerar_expressao(no->filho2); // Resultado em $v0
+    gerar_expressao(no->filho2); 
     
-    // 4. Desempilha LHS para $t1
     emitir("lw $t1, 0($sp)");
     emitir("addiu $sp, $sp, 4");
     
-    // 5. Opera (resultado é 0 ou 1)
-    // Formato: op $v0, $t1, $v0  (i.e., $v0 = ($t1 op $v0))
     char instrucao[50];
     sprintf(instrucao, "%s $v0, $t1, $v0", mnemonico_mips);
     emitir(instrucao);

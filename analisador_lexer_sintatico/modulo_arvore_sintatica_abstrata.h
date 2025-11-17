@@ -14,48 +14,42 @@ extern int yylineno;
  * Cobre todas as construções da gramática: declarações, comandos e expressões.
  */
 typedef enum {
-    // Nós de programa e bloco
     NO_PROGRAMA,
     NO_BLOCO,
 
-    // Nós de lista (encadeados com 'proximo')
     NO_LISTA_DECLARACOES,
     NO_LISTA_COMANDOS,
     NO_LISTA_PARAMETROS,
     NO_LISTA_ARGUMENTOS,
 
-    // Nós de declaração
     NO_DECL_FUNCAO,
     NO_DECL_VARIAVEL,
     NO_PARAMETRO,
 
-    // Nós de comando
-    NO_COMANDO_SE,       // if (filho1) { filho2 } else { filho3 }
-    NO_COMANDO_ENQUANTO, // while (filho1) { filho2 }
-    NO_COMANDO_ATRIBUICAO, // filho1 (ID) = filho2 (expressao)
+    NO_COMANDO_SE,       
+    NO_COMANDO_ENQUANTO, 
+    NO_COMANDO_ATRIBUICAO, 
     NO_COMANDO_LEIA,
     NO_COMANDO_ESCREVA,
     NO_COMANDO_RETORNE,
     NO_COMANDO_NOVALINHA,
     NO_CHAMADA_FUNCAO,
 
-    // Nós de expressão (operadores matemáticos e lógicos)
-    NO_OP_SOMA,     // +
-    NO_OP_SUB,      // -
-    NO_OP_MULT,     // *
-    NO_OP_DIV,      // /
-    NO_OP_IGUAL,    // ==
-    NO_OP_DIFERENTE, // !=
-    NO_OP_MENOR,     // <
-    NO_OP_MAIOR,     // >
-    NO_OP_MENOR_IGUAL, // <=
-    NO_OP_MAIOR_IGUAL, // >=
-    NO_OP_E,         // &&
-    NO_OP_OU,        // ||
-    NO_OP_NEGACAO,   // !
-    NO_OP_UNARIO_MENOS, // - (ex: -5)
+    NO_OP_SOMA,     
+    NO_OP_SUB,      
+    NO_OP_MULT,     
+    NO_OP_DIV,      
+    NO_OP_IGUAL,    
+    NO_OP_DIFERENTE, 
+    NO_OP_MENOR,     
+    NO_OP_MAIOR,     
+    NO_OP_MENOR_IGUAL, 
+    NO_OP_MAIOR_IGUAL, 
+    NO_OP_E,         
+    NO_OP_OU,        
+    NO_OP_NEGACAO,   
+    NO_OP_UNARIO_MENOS, 
 
-    // Nós folha (terminais)
     NO_ID,
     NO_LITERAL_INT,
     NO_LITERAL_CAR,
@@ -68,29 +62,21 @@ typedef enum {
  * Esta estrutura é flexível para representar todos os tipos de nós.
  */
 typedef struct NoAST {
-    //Informações gerais
-    TipoNoAST tipo_no; // O tipo do nó (do enum acima)
-    int linha;         // A linha do código fonte
+    TipoNoAST tipo_no; 
+    int linha;         
 
-    //Filhos da árvore
-    // Usados para diferentes propósitos dependendo do tipo_no:
-        // Exemplo: NO_COMANDO_SE: filho1=condição, filho2=bloco Then, filho3=bloco Else
-        // Exemplo: NO_OP_SOMA:    filho1=lado esquerdo, filho2=lado direito
     struct NoAST *filho1;
     struct NoAST *filho2;
     struct NoAST *filho3;
 
-    //Ponteiro para listas (usado para encadear nós em listas)
     struct NoAST *proximo; 
 
-    //Armazenamento de valores (nós folha)
-    char *lexema; // Para NO_ID, NO_LITERAL_STRING
-    int ival;     // Para NO_LITERAL_INT
-    char cval;    // Para NO_LITERAL_CAR
+    char *lexema; 
+    int ival;     
+    char cval;    
 
-    //Informação semântica (preenchido durante a análise semântica)
-    TipoDado tipo_dado_computado; // Tipo da expressão (int, car)
-    struct EntradaTabela *entrada_tabela; // Ponteiro para a entrada na tabela de símbolos
+    TipoDado tipo_dado_computado; 
+    struct EntradaTabela *entrada_tabela; 
 
 } NoAST;
 
@@ -147,4 +133,4 @@ NoAST *adicionar_a_lista(NoAST *lista, NoAST *no_para_adicionar);
 void liberar_ast(NoAST *raiz);
 
 
-#endif // AST_H
+#endif

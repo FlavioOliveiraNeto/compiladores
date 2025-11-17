@@ -1,5 +1,3 @@
-//Arquivo que contém a implementação das funções para a pilha de tabelas de símbolos, com comentários para explicar o que cada uma faz.
-
 #include "tabela_simbolos.h"
 
 TabelaSimbolos *pilha_tabelas = NULL;
@@ -28,8 +26,7 @@ void criar_novo_escopo_e_empilhar() {
 }
 
 /**
- * @brief Pesquisa um lexema (nome) na pilha de tabelas de símbolos,
- * começando pelo escopo atual (topo) e descendo.
+ * @brief Pesquisa um lexema (nome) na pilha de tabelas de símbolos, começando pelo escopo atual (topo) e descendo.
  * @param nome O lexema a ser pesquisado.
  * @return Um ponteiro para a EntradaTabela encontrada ou NULL se não encontrar.
  */
@@ -208,7 +205,6 @@ void inserir_variavel_na_tabela_atual(const char *nome_variavel, TipoDado tipo_v
 
 /**
  * @brief Insere um parâmetro de função na tabela de símbolos atual (topo da pilha).
- * Nota: Os parâmetros também são variáveis locais no escopo da função.
  * @param nome_parametro O lexema do parâmetro.
  * @param tipo_parametro O tipo do parâmetro (TIPO_INT, TIPO_CAR).
  * @param posicao A posição do parâmetro na declaração.
