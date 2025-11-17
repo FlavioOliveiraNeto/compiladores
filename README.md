@@ -1,93 +1,162 @@
-# Compilador para a Linguagem Goianinha - Criado por: Flávio de Oliveira Neto
+# Compilador para a Linguagem Goianinha
 
-Este projeto é um compilador para uma linguagem de programação simples e didática chamada "Goianinha". O compilador foi desenvolvido em C, utilizando as ferramentas Flex para a análise léxica e Bison para a análise sintática.
+**Autor:** Flávio de Oliveira Neto
 
-## Estrutura do Projeto
+## 1. Introdução
 
-O projeto está organizado em dois diretórios principais:
+Este projeto apresenta um compilador completo para a **Goianinha**, uma linguagem de programação imperativa e didática, projetada para ser simples e funcional. O compilador processa o código-fonte em Goianinha, passando por todas as fases clássicas da compilação — análise léxica, sintática, semântica e geração de código — para produzir um código assembly em MIPS, que pode ser executado em simuladores como o SPIM ou o MARS.
 
-- `tabela_simbolos/`: Este diretório é dedicado à implementação da tabela de símbolos, um componente crucial para a análise semântica que gerencia identificadores (variáveis, funções, etc.) e seus respectivos escopos.
+O objetivo deste projeto é demonstrar o entendimento prático e teórico da construção de compiladores, aplicando conceitos fundamentais como o uso de geradores de analisadores (Flex e Bison), a criação de estruturas de dados intermediárias (Tabela de Símbolos e Árvore Sintática Abstrata) e a tradução de uma linguagem de alto nível para uma linguagem de baixo nível.
 
-  - `tabela_simbolos.h`: Arquivo de cabeçalho que define as estruturas de dados centrais, como `EntradaTabela` (para armazenar informações sobre cada identificador), `TabelaSimbolos` (para representar um escopo) e o `enum` `TipoDado`. Ele também declara os protótipos de todas as funções públicas para manipulação da tabela.
-  - `tabela_simbolos.c`: Contém a implementação das funções para gerenciar a tabela de símbolos. A lógica principal utiliza uma pilha de tabelas para lidar com escopos aninhados, permitindo criar e destruir escopos, bem como inserir e buscar símbolos.
-  - `main_tabela_simbolos.c`: Um programa de teste (`main`) autônomo, criado para verificar a corretude da tabela de símbolos. Ele executa operações de criação de escopo, inserção de símbolos e busca, imprimindo os resultados para validação.
-  - `Makefile`: Automatiza a compilação do programa de teste, ligando `main_tabela_simbolos.c` e `tabela_simbolos.c` para gerar o executável `test_tabela_simbolos`.
+## 2. Arquitetura do Compilador
 
-- `analisador_lexer_sintatico/`: Contém o núcleo do compilador, incluindo:
-  - `goianinha.l`: A definição do analisador léxico (Flex).
-  - `goianinha.y`: A definição do analisador sintático e da gramática (Bison).
-  - `main_compiler.c`: O programa principal que orquestra a compilação.
-  - `Makefile`: Para automatizar o processo de compilação do `goianinha`.
-  - `modulo_arvore_sintatica_abstrata.h` e `modulo_arvore_sintatica_abstrata.c`: Definição e implementação da Árvore Sintática Abstrata (AST).
-  - `modulo_analisador_semantico.h` e `modulo_analisador_semantico.c`: Implementação do analisador semântico.
-  - `modulo_gerador_codigo.h` e `modulo_gerador_codigo.c`: Implementação do gerador de código MIPS.
-  - Arquivos de teste: `expressao1Correto.txt`, `fatorialCorreto.txt`, e outros que demonstram o funcionamento e a detecção de erros.
+O compilador é construído de forma modular, onde cada componente é responsável por uma fase específica do processo de compilação. A interação entre os módulos ocorre da seguinte forma:
 
-## Como Compilar o Projeto
+1.  **Analisador Léxico (`goianinha.l`)**: Lê o código-fonte e o divide em uma sequência de *tokens*.
+2.  **Analisador Sintático (`goianinha.y`)**: Recebe os *tokens* do analisador léxico, verifica se a sequência obedece à gramática da linguagem e constrói a **Árvore Sintática Abstrata (AST)**.
+3.  **Analisador Semântico (`modulo_analisador_semantico.c`)**: Percorre a AST, utilizando a **Tabela de Símbolos** para verificar a corretude semântica do programa (ex: declaração de variáveis, compatibilidade de tipos).
+4.  **Gerador de Código (`modulo_gerador_codigo.c`)**: Se a análise semântica for bem-sucedida, este módulo percorre a AST (agora enriquecida com informações de tipo e escopo) e gera o código assembly MIPS equivalente.
 
-Para compilar o `goianinha`, siga os passos abaixo:
+O fluxo de dados pode ser visualizado da seguinte maneira:
 
-1.  Navegue até o diretório do analisador:
+```
+Código-Fonte Goianinha -> [Analisador Léxico] -> Tokens -> [Analisador Sintático] -> AST -> [Analisador Semântico] -> AST Validada -> [Gerador de Código] -> Código Assembly MIPS
+```
 
+## 3. Detalhamento dos Componentes
+
+### 3.1. Tabela de Símbolos (`tabela_simbolos/`)
+
+A Tabela de Símbolos é uma das estruturas de dados mais importantes do compilador, responsável por armazenar informações sobre todos os identificadores (nomes de variáveis, funções, etc.) do programa.
+
+- **Gerenciamento de Escopo**: A implementação utiliza uma **pilha de tabelas**, onde cada tabela representa um escopo (global, de função ou de bloco). Ao entrar em um novo escopo (ex: uma função ou um bloco `{...}`), uma nova tabela é empilhada. Ao sair, ela é desempilhada. Isso garante que as regras de visibilidade de variáveis sejam respeitadas.
+- **Estruturas de Dados**:
+  - `EntradaTabela`: Armazena o lexema (nome), o tipo de dado, a categoria (variável ou função) e, para funções, informações sobre os parâmetros.
+  - `TabelaSimbolos`: Representa um escopo, contendo uma lista ligada de `EntradaTabela`.
+- **Funcionalidades**:
+  - `criar_novo_escopo_e_empilhar()`: Cria e empilha um novo escopo.
+  - `remover_escopo_atual()`: Destrói o escopo atual e libera a memória.
+  - `inserir_variavel_na_tabela_atual()` / `inserir_funcao_na_tabela_atual()`: Adiciona novos símbolos ao escopo atual.
+  - `pesquisar_nome_na_pilha()`: Busca por um identificador, começando do escopo atual e descendo pela pilha, o que implementa a regra de escopo da linguagem.
+
+### 3.2. Analisador Léxico (`analisador_lexer_sintatico/goianinha.l`)
+
+Implementado com o **Flex**, o analisador léxico (ou *scanner*) é a porta de entrada do compilador. Sua função é ler o arquivo de código-fonte e converter a sequência de caracteres em uma sequência de *tokens*, que são as unidades mínimas de significado da linguagem.
+
+- **Reconhecimento de Padrões**: Utiliza expressões regulares para identificar:
+  - **Palavras-chave**: `programa`, `int`, `se`, `enquanto`, etc.
+  - **Identificadores**: Nomes de variáveis e funções (ex: `minhaVariavel`, `soma`).
+  - **Literais**: Números (`123`), caracteres (`'a'`) e strings (`"ola"`).
+  - **Operadores**: Aritméticos (`+`, `-`), relacionais (`==`, `>`) e lógicos (`&&`, `!`).
+  - **Símbolos**: Parênteses, chaves, ponto e vírgula, etc.
+- **Tratamento de Espaços e Comentários**: Ignora espaços em branco, tabulações e comentários (`// ...` e `/* ... */`).
+- **Comunicação com o Parser**: Ao reconhecer um padrão, ele retorna um código de *token* para o analisador sintático (Bison) e, quando necessário, o valor associado ao *token* (ex: o nome de um `ID` ou o valor de um `INT_LITERAL`) através da variável `yylval`.
+
+### 3.3. Analisador Sintático e a AST (`analisador_lexer_sintatico/goianinha.y`)
+
+Implementado com o **Bison**, o analisador sintático (ou *parser*) tem duas funções principais:
+
+1.  **Análise da Estrutura**: Verifica se a sequência de *tokens* fornecida pelo léxico está em conformidade com a **gramática livre de contexto** da linguagem Goianinha. Se uma regra sintática é violada (ex: um `se` sem `entao`), ele reporta um erro.
+2.  **Construção da Árvore Sintática Abstrata (AST)**: Durante a análise, o parser constrói uma AST, que é uma representação hierárquica do código-fonte, muito mais adequada para as fases seguintes do que o texto plano.
+
+- **A Gramática**: A gramática é definida em um formato BNF-like. Ela especifica como as construções da linguagem (declarações, comandos, expressões) podem ser formadas. Regras de precedência e associatividade de operadores são definidas para resolver ambiguidades (ex: `a + b * c`).
+- **A AST (`modulo_arvore_sintatica_abstrata.c`)**:
+  - Cada nó na árvore (`NoAST`) representa uma construção do código. Por exemplo, um comando `se` é um nó com três filhos: a condição, o bloco `entao` e o bloco `senao`.
+  - A árvore captura a estrutura lógica do programa, descartando detalhes puramente sintáticos como parênteses e ponto e vírgula.
+  - A raiz da árvore (`raiz_ast`) representa o programa como um todo.
+
+### 3.4. Analisador Semântico (`analisador_lexer_sintatico/modulo_analisador_semantico.c`)
+
+Após a validação da sintaxe, o analisador semântico percorre a AST para verificar se o código, embora sintaticamente correto, faz sentido do ponto de vista lógico e das regras de tipo da linguagem.
+
+- **Análise de Escopo**:
+  - Verifica se cada variável ou função utilizada foi previamente declarada.
+  - Garante que não há múltiplas declarações do mesmo identificador no mesmo escopo.
+- **Checagem de Tipos**:
+  - Valida se os tipos em operações são compatíveis. Por exemplo, não permite somar um `int` com uma `string`.
+  - Verifica se o tipo de valor retornado por uma função (`retorne ...`) corresponde ao tipo de retorno declarado para ela.
+  - Assegura que os argumentos passados em uma chamada de função correspondem em número e tipo aos parâmetros declarados.
+- **Enriquecimento da AST**: Durante a travessia, o analisador anota os nós da AST com informações de tipo e ponteiros para as entradas correspondentes na Tabela de Símbolos. Essa informação é crucial para o gerador de código.
+
+### 3.5. Gerador de Código (`analisador_lexer_sintatico/modulo_gerador_codigo.c`)
+
+A fase final do compilador. O gerador de código percorre a AST, já validada e anotada pelo analisador semântico, e traduz cada construção da linguagem Goianinha para uma sequência de instruções em **assembly MIPS**.
+
+- **Convenções de Chamada e Gerenciamento da Pilha**:
+  - **Prólogo e Epílogo**: Cada função gerada possui um prólogo (para salvar registradores e alocar espaço para variáveis locais na pilha) e um epílogo (para restaurar a pilha e retornar ao chamador).
+  - **Passagem de Argumentos**: Os argumentos para funções são passados através da pilha.
+  - **Variáveis Locais**: São acessadas através de um deslocamento (*offset*) a partir do registrador de ponteiro de quadro (`$fp`).
+- **Tradução das Construções**:
+  - **Expressões Aritméticas**: São traduzidas para operações MIPS como `add`, `sub`, `mult`, `div`. O resultado de expressões intermediárias é salvo temporariamente na pilha.
+  - **Comandos de Controle de Fluxo**:
+    - `se-entao-senao`: Implementado com saltos condicionais (`beq`, `bne`) e incondicionais (`j`).
+    - `enquanto`: Traduzido para um loop com um teste no início e um salto para o final se a condição for falsa.
+  - **Chamadas de Função**: Utiliza a instrução `jal` (jump and link) para saltar para a função e salvar o endereço de retorno.
+- **Saída**: O resultado é um arquivo de texto (por padrão, `saida.s`) contendo o código MIPS, pronto para ser executado em um simulador.
+
+## 4. A Linguagem Goianinha
+
+Goianinha é uma linguagem simples com as seguintes características:
+
+- **Tipos de Dados**: `int`, `car`, `void`.
+- **Estrutura**: Todo programa começa com declarações globais, seguidas por `programa { ... }` que funciona como a função `main`.
+- **Declarações**: Suporta declaração de variáveis e funções.
+- **Comandos**:
+  - Atribuição (`=`).
+  - Entrada e Saída (`leia`, `escreva`, `novalinha`).
+  - Controle de fluxo (`se-entao-senao`, `enquanto-execute`).
+  - Retorno de funções (`retorne`).
+- **Expressões**: Aritméticas, relacionais e lógicas.
+
+## 5. Como Compilar e Executar
+
+### Compilando o Compilador
+
+1.  Navegue até o diretório principal do compilador:
     ```bash
     cd analisador_lexer_sintatico
     ```
-
-2.  Execute o comando `make` para compilar o projeto. Este comando irá invocar o Flex e o Bison para gerar os analisadores, compilar todos os arquivos `.c` necessários e linká-los, gerando o executável `goianinha`.
-
+2.  Execute o `make` para compilar todas as partes e gerar o executável `goianinha`:
     ```bash
     make
     ```
 
-## Como Executar e Testar
+### Executando o Compilador
 
-Após a compilação, você pode testar o compilador com os arquivos de exemplo.
-
-1.  Ainda no diretório `analisador_lexer_sintatico`, execute o compilador passando um dos arquivos de teste como argumento:
-
+1.  Com o compilador `goianinha` gerado, execute-o passando um arquivo-fonte como argumento:
     ```bash
-    ./goianinha <nome_do_arquivo_de_teste>.txt
+    ./goianinha ../exemplos/fatorialCorreto.txt
     ```
+2.  O compilador exibirá o progresso da compilação. Se não houver erros, um arquivo `saida.s` será criado no mesmo diretório.
 
-    Por exemplo:
+### Executando o Código Gerado (com SPIM)
 
-    ```bash
-    ./goianinha fatorialCorreto.txt
-    ```
+1.  Abra o simulador SPIM (ou `qtsqim`).
+2.  Carregue o arquivo `saida.s` gerado.
+3.  Execute o programa. A interação (entrada e saída) ocorrerá no console do simulador.
 
-2.  O compilador irá processar o arquivo, exibir mensagens indicando o progresso da análise e, se não houver erros, gerar um arquivo `saida.s` com o código MIPS correspondente.
+## 6. Testando o Compilador
 
-## Testando a Tabela de Símbolos Separadamente
+O diretório `analisador_lexer_sintatico/` contém vários arquivos de teste (`.txt`) que podem ser usados para verificar a funcionalidade do compilador:
 
-É possível compilar e testar a implementação da tabela de símbolos de forma isolada.
+- **Testes de Sucesso**:
+  - `fatorialCorreto.txt`: Calcula o fatorial de um número.
+  - `expressao1Correto.txt`: Testa expressões aritméticas e lógicas.
+- **Testes de Erro**:
+  - `fatorialErroLin3NomeDeclaradoNoMesmoEscopo.txt`: Testa a detecção de variável redeclarada.
+  - `fatorialErroLin4TipoRetornado.txt`: Testa a checagem de tipo de retorno.
 
-1.  Navegue até o diretório `tabela_simbolos`:
+Esses testes são essenciais para validar tanto a capacidade do compilador de gerar código correto quanto sua robustez na identificação de erros semânticos.
 
-    ```bash
-    cd ../tabela_simbolos
-    ```
+## 7. Limpeza do Projeto
 
-2.  Compile o programa de teste:
+Para remover todos os arquivos gerados pela compilação (objetos, executáveis, etc.), use o comando `make clean` nos respectivos diretórios:
 
-    ```bash
-    make
-    ```
+```bash
+# No diretório analisador_lexer_sintatico/
+make clean
 
-3.  Execute o teste:
-    ```bash
-    ./test_tabela_simbolos
-    ```
-    Isso executará uma série de operações na tabela de símbolos e imprimirá os resultados, permitindo verificar a sua corretude.
-
-## Limpeza
-
-Para remover todos os arquivos gerados durante a compilação (arquivos objeto e executáveis) em ambos os diretórios, você pode usar o comando `make clean` em cada um deles.
-
-- No diretório `analisador_lexer_sintatico`:
-  ```bash
-  make clean
-  ```
-- No diretório `tabela_simbolos`:
-  ```bash
-  make clean
-  ```
+# No diretório tabela_simbolos/
+cd ../tabela_simbolos
+make clean
+```
