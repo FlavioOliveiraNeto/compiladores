@@ -2,9 +2,9 @@
 car fatorial(int n){
 	se (n==0)
 	entao
-		retorne 1;
+		retorne 1;/* Erro: tipo da expressao retornada difere do tipo da funcao */
 	senao
-		retorne n* fatorial(n-1); /* Erro de tipo*/
+		retorne n* fatorial(n-1); /* Erro: tipo da expressao retornada difere do tipo da funcao*/
 }
 
 programa {
@@ -17,7 +17,7 @@ programa {
 	}	
 	escreva "O fatorial de ";
 	escreva n;
-        	escreva " e: ";
+    escreva " e: ";
 	escreva fatorial(n);
 	novalinha;
 }

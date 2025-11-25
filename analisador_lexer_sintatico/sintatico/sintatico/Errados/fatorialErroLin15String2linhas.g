@@ -17,8 +17,7 @@ enquanto (n<0) execute {
        leia n;    
 }	
 
-	escreva "O fatorial
-                  de ";
+	escreva "O fatorial de ";
 	escreva n;
         escreva " e: ";
 	escreva fatorial(n);

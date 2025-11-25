@@ -1,6 +1,6 @@
+int x;
 int duplicado(int x) {
-    car x;
-    x = 'z';
+
     escreva x;
     retorne 0;
 }

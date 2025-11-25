@@ -1,12 +1,12 @@
 /* Este  e um programa com ERRO */
-car fatorial(int n){
-        int n;
+int fatorial(int n){
+	int n; /* Erro: nome de variavel redeclarado no mesmo escopo de nomes dos parametros*/
 	se (n==0)
 	entao
 		retorne 1;
 	senao
-		retorne n* fatorial(n-1); /* Erro de tipo*/
-}
+		retorne n* fatorial(n-1);
+} 
 
 programa {
 	int n;

@@ -19,7 +19,7 @@ int fibonacci (int seq){
 			retorne 1;
 		senao{
 			int somaFunc; /*Redeclaracao correta do nome somaFunc, declarado antes em outro escopo*/
-			somaFunc=fibonacci(n-1)+fibonacci(n-2); 
+			somaFunc=fibonacci(seq-1)+fibonacci(seq-2); 
 			retorne somaFunc;
 			}
 }
@@ -41,7 +41,7 @@ enquanto (n<0) execute {
 	fib=fibonacci(n);
 	escreva "Fibonacci de ";
 	escreva n;
-	escreva "e: ";
+	escreva " e: ";
 	escreva fib;
 	novalinha;
 	escreva "A soma do valor do fatorial com o valor de fibonacci e: ";
